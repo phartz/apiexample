@@ -11,29 +11,40 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Variables to identiy the build
+var (
+	Version   string
+	Build     string
+	BuildTime string
+)
+
 type State struct {
 	State string `json:"state"`
 }
 
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/state", GetState)
-	router.HandleFunc("/remotestate/{remoteIp}", RemoteState)
+	router.HandleFunc("/state", getState)
+	router.HandleFunc("/remotestate/{remoteIp}", remoteState)
 
 	port := ":3000"
 	if len(os.Args) > 1 {
+		if os.Args[1] == "-v" {
+			showVersion()
+			return
+		}
 		port = fmt.Sprintf(":%s", os.Args[1])
 	}
 
 	log.Fatal(http.ListenAndServe(port, router))
 }
 
-func GetState(w http.ResponseWriter, r *http.Request) {
+func getState(w http.ResponseWriter, r *http.Request) {
 	state := State{State: "ok"}
 	json.NewEncoder(w).Encode(state)
 }
 
-func RemoteState(w http.ResponseWriter, r *http.Request) {
+func remoteState(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var state State
 
@@ -57,4 +68,12 @@ func getJSON(url string, target interface{}) error {
 	defer r.Body.Close()
 
 	return json.NewDecoder(r.Body).Decode(target)
+}
+
+func showVersion() {
+	fmt.Printf("apiexample version %s (%s)\n", getVersionString(), BuildTime)
+}
+
+func getVersionString() string {
+	return fmt.Sprintf("%s+%s", Version, Build)
 }
